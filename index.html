@@ -69,13 +69,9 @@
 
     <script type="text/babel">
     try {
-        // 1. Acceder a las variables globales (CORREGIDO: Ya deberían estar definidas)
+        // 1. Acceder a las variables globales (Solo React. Recharts se accede dentro del componente)
         const { useState, useEffect } = React;
-        const { 
-            Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, 
-            ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Tooltip 
-        } = Recharts; 
-
+        
         // 2. Datos del Modelo
         const dimensions = [
           {
@@ -264,23 +260,6 @@
               setAnimating(false);
             }, 300);
           };
-
-          const radarData = dimensions.map(dim => ({
-            dimension: dim.name.split(' ')[0],
-            fullName: dim.name,
-            score: calculateDimensionScore(dim.id),
-            fullMark: 25
-          }));
-
-          const barData = dimensions.map(dim => ({
-            name: dim.name.split(' ')[0],
-            fullName: dim.name,
-            score: calculateDimensionScore(dim.id),
-            color: dim.color
-          }));
-
-          const totalScore = calculateTotalScore();
-          const maturityLevel = getMaturityLevel(totalScore);
 
           // PANTALLA DE BIENVENIDA
           if (stage === 'welcome') {
@@ -786,6 +765,23 @@
 
           // PANTALLA DE RESULTADOS
           if (stage === 'results') {
+            
+            // ** CORRECCIÓN CRÍTICA: Acceso a Recharts SOLAMENTE aquí **
+            const RechartsComponents = window.Recharts;
+            if (!RechartsComponents) {
+                // Fallback de seguridad, aunque el setTimeout debería prevenir esto
+                return (
+                    <div style={{ padding: '50px', color: 'red' }}>
+                        Error: La librería de gráficos (Recharts) no cargó. Intente recargar la página.
+                    </div>
+                );
+            }
+
+            const { 
+                Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, 
+                ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Tooltip 
+            } = RechartsComponents;
+
             const sortedDimensions = [...dimensions]
               .map(d => ({ ...d, score: calculateDimensionScore(d.id) }))
               .sort((a, b) => a.score - b.score);
@@ -793,9 +789,27 @@
             const weakestDimensions = sortedDimensions.slice(0, 3);
             const strongestDimensions = sortedDimensions.slice(-3).reverse();
 
+            const totalScore = calculateTotalScore();
+            const maturityLevel = getMaturityLevel(totalScore);
+
             const currentPhase = maturityLevel.level <= 2 ? phases.slice(0, 3) : 
                                  maturityLevel.level === 3 ? phases.slice(2, 5) :
                                  maturityLevel.level === 4 ? phases.slice(4, 6) : phases.slice(5, 7);
+
+            const radarData = dimensions.map(dim => ({
+                dimension: dim.name.split(' ')[0],
+                fullName: dim.name,
+                score: calculateDimensionScore(dim.id),
+                fullMark: 25
+            }));
+
+            const barData = dimensions.map(dim => ({
+                name: dim.name.split(' ')[0],
+                fullName: dim.name,
+                score: calculateDimensionScore(dim.id),
+                color: dim.color
+            }));
+
 
             return (
               <div style={{
