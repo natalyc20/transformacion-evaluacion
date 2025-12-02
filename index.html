@@ -13,8 +13,21 @@
         #loading {
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             height: 100vh; color: #2E86AB; font-size: 18px; text-align: center; padding: 20px;
+            /* Estilo para cubrir la pantalla mientras carga */
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;
+            background-color: #0a1628;
+            transition: opacity 0.5s ease;
         }
-        #error-log { color: #ff6b6b; margin-top: 20px; font-family: monospace; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; max-width: 800px; display: none;}
+        #error-log { 
+            color: #ff6b6b; margin-top: 20px; font-family: monospace; 
+            background: rgba(255,107,107,0.1); padding: 15px; border-radius: 5px; 
+            max-width: 800px; display: none; border: 1px solid #ff6b6b; 
+        }
+        @media print {
+            body { background-color: white; color: black; }
+            #loading { display: none !important; }
+            button { display: none !important; }
+        }
     </style>
 
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -27,7 +40,7 @@
     <div id="root">
         <div id="loading">
             <p>Cargando aplicación...</p>
-            <p style="font-size: 14px; opacity: 0.7;">Si esto tarda más de 5 segundos, verifica tu conexión a internet.</p>
+            <p style="font-size: 14px; opacity: 0.7;">Si esto tarda, por favor, espere o intente recargar la página (Ctrl + Shift + R).</p>
             <div id="error-log"></div>
         </div>
     </div>
@@ -37,33 +50,31 @@
             const errorDiv = document.getElementById('error-log');
             if (errorDiv) {
                 errorDiv.style.display = 'block';
-                errorDiv.innerHTML = `<strong>Error detectado:</strong><br>${message}<br><small>${source}:${lineno}</small>`;
-                console.error(error);
+                errorDiv.innerHTML = `<strong>Error de Carga:</strong><br>${message}<br><small>${source}:${lineno}</small>`;
+                document.getElementById('loading').style.color = '#ff6b6b';
             }
         };
-        // Ocultar el mensaje de carga una vez que el script de React inicie
-        document.addEventListener('DOMContentLoaded', () => {
+        
+        // Función para ocultar el mensaje de carga una vez que el contenido de React esté presente
+        function hideLoading() {
             const loading = document.getElementById('loading');
-            if (loading) {
-                 // Esperamos un momento para dar tiempo a React a renderizar, luego lo ocultamos
-                 setTimeout(() => {
-                    if (document.getElementById('welcome-container')) {
-                        loading.style.display = 'none';
-                    }
-                }, 500);
+            const welcomeContainer = document.getElementById('welcome-container');
+            if (loading && welcomeContainer) {
+                loading.style.opacity = '0';
+                setTimeout(() => { loading.style.display = 'none'; }, 500);
             }
-        });
+        }
     </script>
 
 
     <script type="text/babel">
     try {
-        // 1. Acceder a las variables globales (Ahora Recharts funcionará)
+        // 1. Acceder a las variables globales (CORREGIDO: Ya deberían estar definidas)
         const { useState, useEffect } = React;
         const { 
             Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, 
             ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Tooltip 
-        } = Recharts; // << ESTO YA NO FALLARÁ
+        } = Recharts; 
 
         // 2. Datos del Modelo
         const dimensions = [
@@ -193,6 +204,14 @@
           const [companyName, setCompanyName] = useState('');
           const [assessorName, setAssessorName] = useState('');
           const [animating, setAnimating] = useState(false);
+          
+          // Ocultar el mensaje de carga una vez que el componente se monta y renderiza la pantalla de bienvenida
+          useEffect(() => {
+              if (stage === 'welcome') {
+                  hideLoading();
+              }
+          }, [stage]);
+
 
           const handleAnswer = (questionId, value) => {
             setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -799,10 +818,14 @@
                     0%, 100% { box-shadow: 0 0 30px ${maturityLevel.color}50; }
                     50% { box-shadow: 0 0 60px ${maturityLevel.color}80; }
                   }
+                  @media print {
+                      /* Ocultar elementos de navegación y Círculo de Score para impresión limpia */
+                      .print-hide { display: none !important; }
+                  }
                 `}</style>
 
                 {/* Header */}
-                <div style={{
+                <div className="print-hide" style={{
                   background: 'rgba(0,0,0,0.3)',
                   borderBottom: '1px solid rgba(255,255,255,0.1)',
                   padding: '16px 24px'
@@ -844,7 +867,7 @@
                     </h1>
 
                     {/* Score Circle */}
-                    <div style={{
+                    <div className="print-hide" style={{
                       display: 'inline-block',
                       padding: '40px',
                       background: `linear-gradient(135deg, ${maturityLevel.color}30, ${maturityLevel.color}10)`,
@@ -1194,7 +1217,7 @@
                   </div>
 
                   {/* Call to Action */}
-                  <div style={{
+                  <div className="print-hide" style={{
                     textAlign: 'center',
                     padding: '60px 40px',
                     background: 'linear-gradient(135deg, rgba(46,134,171,0.2), rgba(40,180,99,0.2))',
@@ -1288,18 +1311,34 @@
           }
         }
 
-        // 4. Renderizado Final
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<DigitalMaturityAssessment />);
+        // 4. Renderizado Final - Envuelto en función y setTimeout para resolver problemas de carga de librerías
+        function startApp() {
+            try {
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(<DigitalMaturityAssessment />);
+            } catch (e) {
+                 const errorDiv = document.getElementById('error-log');
+                 if (errorDiv) {
+                     errorDiv.style.display = 'block';
+                     errorDiv.innerHTML = `<strong>Error de Renderizado:</strong><br>${e.message}<br><small>Revisa el error en la consola para más detalles.</small>`;
+                     document.getElementById('loading').style.color = '#ff6b6b';
+                 }
+                 console.error("Error en la ejecución de React:", e);
+            }
+        }
+
+        // Damos 100ms para asegurar que Recharts y otras librerías terminen de cargarse
+        setTimeout(startApp, 100); 
+
     } catch (e) {
-        // Capturamos cualquier error de renderizado que no haya sido atrapado por window.onerror
+        // Capturamos errores de Babel o de sintaxis general (fuera del componente)
         const errorDiv = document.getElementById('error-log');
         if (errorDiv) {
              errorDiv.style.display = 'block';
-             errorDiv.innerHTML = `<strong>Error Fatal en React:</strong><br>${e.message}<br><small>Revisa el error en la consola para más detalles.</small>`;
+             errorDiv.innerHTML = `<strong>Error Fatal en Babel/JSX:</strong><br>${e.message}<br><small>Revisa el error en la consola para más detalles.</small>`;
              document.getElementById('loading').style.color = '#ff6b6b';
         }
-        console.error("Error en la ejecución de React:", e);
+        console.error("Error en la transpilación de Babel:", e);
     }
     </script>
 </body>
