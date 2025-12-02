@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Madurez Digital - Transformación ExO</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Outfit', sans-serif; background-color: #0a1628; }
+        * { box-sizing: border-box; }
+    </style>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Acceder a las librerías globales
+        const { useState, useEffect } = React;
+        const { 
+            Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, 
+            ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Tooltip 
+        } = Recharts;
+
+        // --- DATOS DEL MODELO ---
+        const dimensions = [
+          {
+            id: 'estrategia',
+            name: 'Estrategia y Liderazgo',
+            icon: '🎯',
+            color: '#1B4F72',
+            phase: '1-2',
+            questions: [
+              { id: 'E1', text: 'Existe una visión digital clara, documentada y comunicada a toda la organización' },
+              { id: 'E2', text: 'El liderazgo ejecutivo está comprometido activamente con la transformación digital' },
+              { id: 'E3', text: 'Existe gobernanza y presupuesto específico para iniciativas digitales' },
+              { id: 'E4', text: 'Se miden KPIs de transformación digital regularmente y se toman acciones' },
+              { id: 'E5', text: 'La estrategia digital está completamente alineada con la estrategia de negocio' }
+            ]
+          },
+          {
+            id: 'cliente',
+            name: 'Experiencia del Cliente',
+            icon: '👥',
+            color: '#2E86AB',
+            phase: '4',
+            questions: [
+              { id: 'C1', text: 'Existe un mapa del customer journey digital documentado y actualizado' },
+              { id: 'C2', text: 'Se ofrece experiencia omnicanal integrada y consistente' },
+              { id: 'C3', text: 'Se personalizan productos/servicios basados en datos del cliente' },
+              { id: 'C4', text: 'Se mide y analiza la satisfacción digital del cliente (NPS, CSAT)' },
+              { id: 'C5', text: 'Existen canales digitales de autoservicio efectivos para el cliente' }
+            ]
+          },
+          {
+            id: 'operaciones',
+            name: 'Operaciones y Procesos',
+            icon: '⚙️',
+            color: '#28B463',
+            phase: '3',
+            questions: [
+              { id: 'O1', text: 'Los procesos clave están digitalizados y automatizados' },
+              { id: 'O2', text: 'Existe integración efectiva entre sistemas principales (ERP, CRM, etc.)' },
+              { id: 'O3', text: 'Se utilizan herramientas de colaboración digital efectivamente' },
+              { id: 'O4', text: 'Se aplican metodologías ágiles en la gestión de proyectos' },
+              { id: 'O5', text: 'Existe mejora continua basada en métricas operativas' }
+            ]
+          },
+          {
+            id: 'tecnologia',
+            name: 'Tecnología e Infraestructura',
+            icon: '💻',
+            color: '#8E44AD',
+            phase: '3-6',
+            questions: [
+              { id: 'T1', text: 'Se utilizan servicios cloud (IaaS, PaaS, SaaS) estratégicamente' },
+              { id: 'T2', text: 'Existe arquitectura de APIs para integración de sistemas' },
+              { id: 'T3', text: 'Hay estrategia y controles de ciberseguridad implementados' },
+              { id: 'T4', text: 'La infraestructura es escalable y flexible ante cambios de demanda' },
+              { id: 'T5', text: 'Se aplican prácticas DevOps/DevSecOps en desarrollo' }
+            ]
+          },
+          {
+            id: 'datos',
+            name: 'Datos e Inteligencia',
+            icon: '📊',
+            color: '#E67E22',
+            phase: '5-6',
+            questions: [
+              { id: 'D1', text: 'Existe gobernanza de datos con roles y políticas definidas' },
+              { id: 'D2', text: 'Se utilizan dashboards y reportes para toma de decisiones' },
+              { id: 'D3', text: 'Se aplica IA/ML para analytics predictivo o automatización' },
+              { id: 'D4', text: 'Los datos son de alta calidad, consistentes y accesibles' },
+              { id: 'D5', text: 'Las decisiones estratégicas se basan en análisis de datos' }
+            ]
+          },
+          {
+            id: 'personas',
+            name: 'Personas y Cultura',
+            icon: '🧠',
+            color: '#C0392B',
+            phase: '5',
+            questions: [
+              { id: 'P1', text: 'Existen programas de capacitación en competencias digitales' },
+              { id: 'P2', text: 'El liderazgo modela comportamientos digitales deseados' },
+              { id: 'P3', text: 'La cultura fomenta experimentación y tolerancia al error' },
+              { id: 'P4', text: 'Existen equipos multidisciplinarios y ágiles funcionando' },
+              { id: 'P5', text: 'Hay bajo nivel de resistencia al cambio tecnológico' }
+            ]
+          },
+          {
+            id: 'innovacion',
+            name: 'Innovación y Ecosistema',
+            icon: '🚀',
+            color: '#16A085',
+            phase: '6-7',
+            questions: [
+              { id: 'I1', text: 'Existe proceso sistemático para captar y evaluar ideas innovadoras' },
+              { id: 'I2', text: 'Se colabora con startups, universidades o partners externos' },
+              { id: 'I3', text: 'Se exploran tecnologías emergentes (IA, IoT, Blockchain, etc.)' },
+              { id: 'I4', text: 'Se han lanzado nuevos productos/servicios digitales exitosos' },
+              { id: 'I5', text: 'Se participa activamente en ecosistemas digitales del sector' }
+            ]
+          }
+        ];
+
+        const maturityLevels = [
+          { level: 1, name: 'Inicial', color: '#E74C3C', range: [35, 70], phase: '1', description: 'Sin estrategia digital definida. Procesos manuales predominantes.' },
+          { level: 2, name: 'En Desarrollo', color: '#F39C12', range: [71, 105], phase: '2-3', description: 'Estrategia emergente. Primeros proyectos de digitalización.' },
+          { level: 3, name: 'Definido', color: '#27AE60', range: [106, 122], phase: '4-5', description: 'Estrategia formalizada. Procesos integrados y cultura de datos.' },
+          { level: 4, name: 'Gestionado', color: '#2980B9', range: [123, 157], phase: '6', description: 'Digital integrado en estrategia. Innovación sistemática.' },
+          { level: 5, name: 'Optimizado', color: '#1B4F72', range: [158, 175], phase: '7', description: 'Fusión digital completa. Organización exponencial.' }
+        ];
+
+        const phases = [
+          { num: 1, name: 'Evaluación del Estado Actual', focus: 'Diagnóstico FODA digital, mapeo de procesos' },
+          { num: 2, name: 'Definición de la Estrategia', focus: 'Visión digital, KPIs, alineación con negocio' },
+          { num: 3, name: 'Optimización Operativa', focus: 'Automatización, reducción de costos, productividad' },
+          { num: 4, name: 'Innovación en Modelo de Negocios', focus: 'Nuevos productos digitales, experiencia cliente' },
+          { num: 5, name: 'Desarrollo de Capacidades', focus: 'Upskilling, cultura de innovación, equipos ágiles' },
+          { num: 6, name: 'Modelo de Negocio Disruptivo', focus: 'Tecnologías exponenciales, ecosistemas digitales' },
+          { num: 7, name: 'Fusión Digital', focus: 'ADN digital, organización exponencial, mejora continua' }
+        ];
+
+        // --- COMPONENTE PRINCIPAL ---
+        function DigitalMaturityAssessment() {
+          const [stage, setStage] = useState('welcome');
+          const [currentDimension, setCurrentDimension] = useState(0);
+          const [answers, setAnswers] = useState({});
+          const [companyName, setCompanyName] = useState('');
+          const [assessorName, setAssessorName] = useState('');
+          const [animating, setAnimating] = useState(false);
+
+          const handleAnswer = (questionId, value) => {
+            setAnswers(prev => ({ ...prev, [questionId]: value }));
+          };
+
+          const calculateDimensionScore = (dimensionId) => {
+            const dimension = dimensions.find(d => d.id === dimensionId);
+            if (!dimension) return 0;
+            const scores = dimension.questions.map(q => answers[q.id] || 0);
+            return scores.reduce((a, b) => a + b, 0);
+          };
+
+          const calculateTotalScore = () => {
+            return dimensions.reduce((total, dim) => total + calculateDimensionScore(dim.id), 0);
+          };
+
+          const getMaturityLevel = (score) => {
+            return maturityLevels.find(l => score >= l.range[0] && score <= l.range[1]) || maturityLevels[0];
+          };
+
+          const isDimensionComplete = (dimIndex) => {
+            const dim = dimensions[dimIndex];
+            return dim.questions.every(q => answers[q.id] !== undefined);
+          };
+
+          const getProgress = () => {
+            const totalQuestions = dimensions.reduce((t, d) => t + d.questions.length, 0);
+            const answeredQuestions = Object.keys(answers).length;
+            return Math.round((answeredQuestions / totalQuestions) * 100);
+          };
+
+          const nextDimension = () => {
+            setAnimating(true);
+            setTimeout(() => {
+              if (currentDimension < dimensions.length - 1) {
+                setCurrentDimension(prev => prev + 1);
+              } else {
+                setStage('results');
+              }
+              setAnimating(false);
+            }, 300);
+          };
+
+          const prevDimension = () => {
+            setAnimating(true);
+            setTimeout(() => {
+              if (currentDimension > 0) {
+                setCurrentDimension(prev => prev - 1);
+              }
+              setAnimating(false);
+            }, 300);
+          };
+
+          const radarData = dimensions.map(dim => ({
+            dimension: dim.name.split(' ')[0],
+            fullName: dim.name,
+            score: calculateDimensionScore(dim.id),
+            fullMark: 25
+          }));
+
+          const barData = dimensions.map(dim => ({
+            name: dim.name.split(' ')[0],
+            fullName: dim.name,
+            score: calculateDimensionScore(dim.id),
+            color: dim.color
+          }));
+
+          const totalScore = calculateTotalScore();
+          const maturityLevel = getMaturityLevel(totalScore);
+
+          // Welcome Screen
+          if (stage === 'welcome') {
+            return (
+              <div style={{
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #0a1628 0%, #1a365d 50%, #0d2137 100%)',
+                fontFamily: "'Outfit', sans-serif",
+                color: '#fff',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                
+                {/* Animated background elements */}
+                <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+                  {[...Array(20)].map((_, i) => (
+                    <div key={i} style={{
+                      position: 'absolute',
+                      width: `${Math.random() * 300 + 100}px`,
+                      height: `${Math.random() * 300 + 100}px`,
+                      borderRadius: '50%',
+                      background: `radial-gradient(circle, rgba(46,134,171,${Math.random() * 0.15}) 0%, transparent 70%)`,
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      animation: `float ${10 + Math.random() * 20}s ease-in-out infinite`,
+                      animationDelay: `${Math.random() * 5}s`
+                    }} />
+                  ))}
+                </div>
+
+                <style>{`
+                  @keyframes float {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(30px, -30px) scale(1.1); }
+                    66% { transform: translate(-20px, 20px) scale(0.9); }
+                  }
+                  @keyframes pulse {
+                    0%, 100% { opacity: 0.5; }
+                    50% { opacity: 1; }
+                  }
+                  @keyframes slideUp {
+                    from { opacity: 0; transform: translateY(30px); }
+                    to { opacity: 1; transform: translateY(0); }
+                  }
+                  @keyframes glow {
+                    0%, 100% { box-shadow: 0 0 20px rgba(46,134,171,0.5); }
+                    50% { box-shadow: 0 0 40px rgba(46,134,171,0.8), 0 0 60px rgba(46,134,171,0.4); }
+                  }
+                `}</style>
+
+                <div style={{
+                  maxWidth: '900px',
+                  margin: '0 auto',
+                  padding: '60px 24px',
+                  position: 'relative',
+                  zIndex: 1
+                }}>
+                  {/* Logo/Brand */}
+                  <div style={{ textAlign: 'center', marginBottom: '48px', animation: 'slideUp 0.8s ease-out' }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 24px',
+                      background: 'rgba(255,255,255,0.05)',
+                      borderRadius: '50px',
+                      border: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      <span style={{ fontSize: '28px' }}>🦋</span>
+                      <span style={{ fontWeight: 600, letterSpacing: '2px', fontSize: '14px' }}>TRANSFORMACIÓN ExO</span>
+                    </div>
+                  </div>
+
+                  {/* Main Title */}
+                  <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+                    <h1 style={{
+                      fontSize: 'clamp(32px, 6vw, 56px)',
+                      fontWeight: 800,
+                      lineHeight: 1.1,
+                      marginBottom: '24px',
+                      animation: 'slideUp 0.8s ease-out 0.2s both'
+                    }}>
+                      Modelo Integral de{' '}
+                      <span style={{
+                        background: 'linear-gradient(135deg, #2E86AB, #28B463)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                      }}>Evaluación de Madurez Digital</span>
+                    </h1>
+                    <p style={{
+                      fontSize: '18px',
+                      color: 'rgba(255,255,255,0.7)',
+                      maxWidth: '600px',
+                      margin: '0 auto',
+                      lineHeight: 1.7,
+                      animation: 'slideUp 0.8s ease-out 0.4s both'
+                    }}>
+                      Descubra el nivel de madurez digital de su organización basado en las 7 dimensiones clave y las 7 fases del camino hacia la fusión digital.
+                    </p>
+                  </div>
+
+                  {/* Stats */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '20px',
+                    marginBottom: '48px',
+                    animation: 'slideUp 0.8s ease-out 0.5s both'
+                  }}>
+                    {[
+                      { num: '7', label: 'Dimensiones' },
+                      { num: '35', label: 'Criterios' },
+                      { num: '5', label: 'Niveles de Madurez' }
+                    ].map((stat, i) => (
+                      <div key={i} style={{
+                        textAlign: 'center',
+                        padding: '24px',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(255,255,255,0.08)'
+                      }}>
+                        <div style={{ fontSize: '36px', fontWeight: 800, color: '#2E86AB' }}>{stat.num}</div>
+                        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Form */}
+                  <div style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: '24px',
+                    padding: '40px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    animation: 'slideUp 0.8s ease-out 0.6s both'
+                  }}>
+                    <h3 style={{ fontSize: '20px', marginBottom: '24px', fontWeight: 600 }}>Información de la Evaluación</h3>
+                    
+                    <div style={{ display: 'grid', gap: '20px' }}>
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
+                          Nombre de la Empresa
+                        </label>
+                        <input
+                          type="text"
+                          value={companyName}
+                          onChange={e => setCompanyName(e.target.value)}
+                          placeholder="Ingrese el nombre de su empresa"
+                          style={{
+                            width: '100%',
+                            padding: '16px 20px',
+                            fontSize: '16px',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '2px solid rgba(255,255,255,0.1)',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            outline: 'none',
+                            transition: 'all 0.3s ease',
+                            boxSizing: 'border-box'
+                          }}
+                          onFocus={e => e.target.style.borderColor = '#2E86AB'}
+                          onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>
+                          Nombre del Evaluador
+                        </label>
+                        <input
+                          type="text"
+                          value={assessorName}
+                          onChange={e => setAssessorName(e.target.value)}
+                          placeholder="Su nombre"
+                          style={{
+                            width: '100%',
+                            padding: '16px 20px',
+                            fontSize: '16px',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '2px solid rgba(255,255,255,0.1)',
+                            borderRadius: '12px',
+                            color: '#fff',
+                            outline: 'none',
+                            transition: 'all 0.3s ease',
+                            boxSizing: 'border-box'
+                          }}
+                          onFocus={e => e.target.style.borderColor = '#2E86AB'}
+                          onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setStage('assessment')}
+                      disabled={!companyName.trim()}
+                      style={{
+                        width: '100%',
+                        marginTop: '32px',
+                        padding: '18px 32px',
+                        fontSize: '18px',
+                        fontWeight: 700,
+                        background: companyName.trim() ? 'linear-gradient(135deg, #2E86AB, #28B463)' : 'rgba(255,255,255,0.1)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '12px',
+                        cursor: companyName.trim() ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.3s ease',
+                        animation: companyName.trim() ? 'glow 2s ease-in-out infinite' : 'none'
+                      }}
+                    >
+                      Iniciar Evaluación →
+                    </button>
+                  </div>
+
+                  {/* Footer info */}
+                  <div style={{
+                    textAlign: 'center',
+                    marginTop: '48px',
+                    padding: '24px',
+                    color: 'rgba(255,255,255,0.5)',
+                    fontSize: '14px',
+                    animation: 'slideUp 0.8s ease-out 0.8s both'
+                  }}>
+                    <p style={{ marginBottom: '8px' }}>
+                      <strong style={{ color: 'rgba(255,255,255,0.8)' }}>70% Personas · 25% Metodología · 5% Tecnología</strong>
+                    </p>
+                    <p>Basado en modelos de Deloitte, MIT Sloan, KPMG, BCG y Gartner</p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Assessment Screen
+          if (stage === 'assessment') {
+            const dim = dimensions[currentDimension];
+            
+            return (
+              <div style={{
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #0a1628 0%, #1a365d 50%, #0d2137 100%)',
+                fontFamily: "'Outfit', sans-serif",
+                color: '#fff'
+              }}>
+                
+                <style>{`
+                  @keyframes fadeSlide {
+                    from { opacity: 0; transform: translateX(${animating ? '-20px' : '20px'}); }
+                    to { opacity: 1; transform: translateX(0); }
+                  }
+                `}</style>
+
+                {/* Header */}
+                <div style={{
+                  background: 'rgba(0,0,0,0.3)',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                  padding: '16px 24px',
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 100,
+                  backdropFilter: 'blur(10px)'
+                }}>
+                  <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '24px' }}>🦋</span>
+                      <span style={{ fontWeight: 600, fontSize: '14px', letterSpacing: '1px' }}>TRANSFORMACIÓN ExO</span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{
+                        background: 'rgba(255,255,255,0.1)',
+                        borderRadius: '50px',
+                        padding: '8px 16px',
+                        fontSize: '14px'
+                      }}>
+                        {companyName}
+                      </div>
+                      <div style={{
+                        background: 'linear-gradient(135deg, #2E86AB, #28B463)',
+                        borderRadius: '50px',
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        fontWeight: 600
+                      }}>
+                        {getProgress()}% Completado
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{
+                  height: '4px',
+                  background: 'rgba(255,255,255,0.1)'
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${((currentDimension + 1) / dimensions.length) * 100}%`,
+                    background: 'linear-gradient(90deg, #2E86AB, #28B463)',
+                    transition: 'width 0.5s ease'
+                  }} />
+                </div>
+
+                {/* Dimension tabs */}
+                <div style={{
+                  background: 'rgba(0,0,0,0.2)',
+                  padding: '16px 24px',
+                  overflowX: 'auto'
+                }}>
+                  <div style={{ 
+                    maxWidth: '1000px', 
+                    margin: '0 auto', 
+                    display: 'flex', 
+                    gap: '8px',
+                    justifyContent: 'center'
+                  }}>
+                    {dimensions.map((d, i) => (
+                      <button
+                        key={d.id}
+                        onClick={() => { setAnimating(true); setTimeout(() => { setCurrentDimension(i); setAnimating(false); }, 300); }}
+                        style={{
+                          padding: '10px 16px',
+                          fontSize: '13px',
+                          fontWeight: i === currentDimension ? 700 : 500,
+                          background: i === currentDimension ? d.color : 'rgba(255,255,255,0.05)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          whiteSpace: 'nowrap',
+                          opacity: isDimensionComplete(i) && i !== currentDimension ? 0.8 : 1
+                        }}
+                      >
+                        <span>{d.icon}</span>
+                        <span style={{ display: i === currentDimension ? 'inline' : 'none' }}>{d.name.split(' ')[0]}</span>
+                        {isDimensionComplete(i) && <span>✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div style={{
+                  maxWidth: '800px',
+                  margin: '0 auto',
+                  padding: '40px 24px',
+                  animation: animating ? 'none' : 'fadeSlide 0.4s ease-out'
+                }}>
+                  {/* Dimension header */}
+                  <div style={{
+                    textAlign: 'center',
+                    marginBottom: '40px'
+                  }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '80px',
+                      height: '80px',
+                      fontSize: '40px',
+                      background: `linear-gradient(135deg, ${dim.color}40, ${dim.color}20)`,
+                      borderRadius: '20px',
+                      marginBottom: '20px',
+                      border: `2px solid ${dim.color}`
+                    }}>
+                      {dim.icon}
+                    </div>
+                    <h2 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '8px' }}>
+                      {dim.name}
+                    </h2>
+                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '16px' }}>
+                      Dimensión {currentDimension + 1} de {dimensions.length} · Fase MIED: {dim.phase}
+                    </p>
+                  </div>
+
+                  {/* Questions */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {dim.questions.map((q, qIndex) => (
+                      <div
+                        key={q.id}
+                        style={{
+                          background: 'rgba(255,255,255,0.03)',
+                          borderRadius: '16px',
+                          padding: '24px',
+                          border: answers[q.id] ? `2px solid ${dim.color}` : '2px solid rgba(255,255,255,0.08)',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        <p style={{
+                          fontSize: '16px',
+                          marginBottom: '20px',
+                          lineHeight: 1.6,
+                          color: 'rgba(255,255,255,0.9)'
+                        }}>
+                          <span style={{ 
+                            color: dim.color, 
+                            fontWeight: 700,
+                            fontFamily: "'Space Mono', monospace"
+                          }}>{q.id}.</span> {q.text}
+                        </p>
+                        
+                        <div style={{
+                          display: 'flex',
+                          gap: '8px',
+                          flexWrap: 'wrap'
+                        }}>
+                          {[1, 2, 3, 4, 5].map(score => (
+                            <button
+                              key={score}
+                              onClick={() => handleAnswer(q.id, score)}
+                              style={{
+                                flex: 1,
+                                minWidth: '60px',
+                                padding: '14px 8px',
+                                fontSize: '14px',
+                                fontWeight: answers[q.id] === score ? 700 : 500,
+                                background: answers[q.id] === score ? dim.color : 'rgba(255,255,255,0.05)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '10px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                transform: answers[q.id] === score ? 'scale(1.05)' : 'scale(1)'
+                              }}
+                            >
+                              <div style={{ fontSize: '18px', marginBottom: '4px' }}>{score}</div>
+                              <div style={{ fontSize: '10px', opacity: 0.8 }}>
+                                {['No existe', 'Inicial', 'En desarrollo', 'Establecido', 'Optimizado'][score - 1]}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Dimension score */}
+                  <div style={{
+                    marginTop: '32px',
+                    padding: '20px',
+                    background: `linear-gradient(135deg, ${dim.color}30, ${dim.color}10)`,
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    border: `1px solid ${dim.color}50`
+                  }}>
+                    <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Puntaje de {dim.name}:</span>
+                    <span style={{ fontSize: '24px', fontWeight: 700, marginLeft: '12px' }}>
+                      {calculateDimensionScore(dim.id)} / 25
+                    </span>
+                  </div>
+
+                  {/* Navigation */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginTop: '40px',
+                    gap: '16px'
+                  }}>
+                    <button
+                      onClick={prevDimension}
+                      disabled={currentDimension === 0}
+                      style={{
+                        padding: '16px 32px',
+                        fontSize: '16px',
+                        fontWeight: 600,
+                        background: currentDimension === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
+                        color: currentDimension === 0 ? 'rgba(255,255,255,0.3)' : '#fff',
+                        border: 'none',
+                        borderRadius: '12px',
+                        cursor: currentDimension === 0 ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      ← Anterior
+                    </button>
+                    
+                    <button
+                      onClick={nextDimension}
+                      disabled={!isDimensionComplete(currentDimension)}
+                      style={{
+                        padding: '16px 32px',
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        background: isDimensionComplete(currentDimension) 
+                          ? 'linear-gradient(135deg, #2E86AB, #28B463)'
+                          : 'rgba(255,255,255,0.05)',
+                        color: isDimensionComplete(currentDimension) ? '#fff' : 'rgba(255,255,255,0.3)',
+                        border: 'none',
+                        borderRadius: '12px',
+                        cursor: isDimensionComplete(currentDimension) ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      {currentDimension === dimensions.length - 1 ? 'Ver Resultados →' : 'Siguiente →'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Results Screen
+          if (stage === 'results') {
+            const sortedDimensions = [...dimensions]
+              .map(d => ({ ...d, score: calculateDimensionScore(d.id) }))
+              .sort((a, b) => a.score - b.score);
+
+            const weakestDimensions = sortedDimensions.slice(0, 3);
+            const strongestDimensions = sortedDimensions.slice(-3).reverse();
+
+            const currentPhase = maturityLevel.level <= 2 ? phases.slice(0, 3) : 
+                                 maturityLevel.level === 3 ? phases.slice(2, 5) :
+                                 maturityLevel.level === 4 ? phases.slice(4, 6) : phases.slice(5, 7);
+
+            return (
+              <div style={{
+                minHeight: '100vh',
+                background: 'linear-gradient(135deg, #0a1628 0%, #1a365d 50%, #0d2137 100%)',
+                fontFamily: "'Outfit', sans-serif",
+                color: '#fff'
+              }}>
+                
+                <style>{`
+                  @keyframes slideIn {
+                    from { opacity: 0; transform: translateY(30px); }
+                    to { opacity: 1; transform: translateY(0); }
+                  }
+                  @keyframes countUp {
+                    from { opacity: 0; transform: scale(0.5); }
+                    to { opacity: 1; transform: scale(1); }
+                  }
+                  @keyframes glow {
+                    0%, 100% { box-shadow: 0 0 30px ${maturityLevel.color}50; }
+                    50% { box-shadow: 0 0 60px ${maturityLevel.color}80; }
+                  }
+                `}</style>
+
+                {/* Header */}
+                <div style={{
+                  background: 'rgba(0,0,0,0.3)',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                  padding: '16px 24px'
+                }}>
+                  <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '24px' }}>🦋</span>
+                      <span style={{ fontWeight: 600, fontSize: '14px' }}>TRANSFORMACIÓN ExO</span>
+                    </div>
+                    <button
+                      onClick={() => { setStage('welcome'); setAnswers({}); setCurrentDimension(0); }}
+                      style={{
+                        padding: '10px 20px',
+                        background: 'rgba(255,255,255,0.1)',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px'
+                      }}
+                    >
+                      Nueva Evaluación
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 24px' }}>
+                  {/* Main Score Section */}
+                  <div style={{
+                    textAlign: 'center',
+                    marginBottom: '60px',
+                    animation: 'slideIn 0.8s ease-out'
+                  }}>
+                    <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '16px' }}>
+                      Resultados de Evaluación para
+                    </p>
+                    <h1 style={{ fontSize: '36px', fontWeight: 800, marginBottom: '40px' }}>
+                      {companyName}
+                    </h1>
+
+                    {/* Score Circle */}
+                    <div style={{
+                      display: 'inline-block',
+                      padding: '40px',
+                      background: `linear-gradient(135deg, ${maturityLevel.color}30, ${maturityLevel.color}10)`,
+                      borderRadius: '50%',
+                      border: `4px solid ${maturityLevel.color}`,
+                      marginBottom: '24px',
+                      animation: 'glow 2s ease-in-out infinite, countUp 1s ease-out'
+                    }}>
+                      <div style={{ fontSize: '72px', fontWeight: 800, fontFamily: "'Space Mono', monospace" }}>
+                        {totalScore}
+                      </div>
+                      <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.6)' }}>
+                        de 175 puntos
+                      </div>
+                    </div>
+
+                    {/* Maturity Level Badge */}
+                    <div style={{
+                      display: 'inline-block',
+                      padding: '16px 40px',
+                      background: maturityLevel.color,
+                      borderRadius: '100px',
+                      marginBottom: '16px'
+                    }}>
+                      <span style={{ fontSize: '14px', opacity: 0.8 }}>NIVEL {maturityLevel.level}</span>
+                      <span style={{ fontSize: '24px', fontWeight: 700, marginLeft: '12px' }}>{maturityLevel.name.toUpperCase()}</span>
+                    </div>
+
+                    <p style={{
+                      color: 'rgba(255,255,255,0.7)',
+                      fontSize: '18px',
+                      maxWidth: '600px',
+                      margin: '0 auto'
+                    }}>
+                      {maturityLevel.description}
+                    </p>
+                  </div>
+
+                  {/* Charts Grid */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                    gap: '24px',
+                    marginBottom: '60px'
+                  }}>
+                    {/* Radar Chart */}
+                    <div style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      borderRadius: '24px',
+                      padding: '32px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      animation: 'slideIn 0.8s ease-out 0.2s both'
+                    }}>
+                      <h3 style={{ fontSize: '20px', marginBottom: '24px', fontWeight: 600 }}>
+                        Perfil de Madurez Digital
+                      </h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <RadarChart data={radarData}>
+                          <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                          <PolarAngleAxis dataKey="dimension" tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }} />
+                          <PolarRadiusAxis angle={30} domain={[0, 25]} tick={{ fill: 'rgba(255,255,255,0.5)' }} />
+                          <Radar
+                            name="Score"
+                            dataKey="score"
+                            stroke="#2E86AB"
+                            fill="#2E86AB"
+                            fillOpacity={0.5}
+                          />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Bar Chart */}
+                    <div style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      borderRadius: '24px',
+                      padding: '32px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      animation: 'slideIn 0.8s ease-out 0.3s both'
+                    }}>
+                      <h3 style={{ fontSize: '20px', marginBottom: '24px', fontWeight: 600 }}>
+                        Puntaje por Dimensión
+                      </h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={barData} layout="vertical">
+                          <XAxis type="number" domain={[0, 25]} tick={{ fill: 'rgba(255,255,255,0.7)' }} />
+                          <YAxis type="category" dataKey="name" tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }} width={80} />
+                          <Tooltip 
+                            content={({ payload }) => payload?.[0] ? (
+                              <div style={{ background: '#1a365d', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)' }}>
+                                <p style={{ fontWeight: 600 }}>{payload[0].payload.fullName}</p>
+                                <p style={{ color: payload[0].payload.color }}>{payload[0].value} / 25 puntos</p>
+                              </div>
+                            ) : null}
+                          />
+                          <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+                            {barData.map((entry, index) => (
+                              <Cell key={index} fill={entry.color} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Strengths and Weaknesses */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+                    gap: '24px',
+                    marginBottom: '60px'
+                  }}>
+                    {/* Weaknesses */}
+                    <div style={{
+                      background: 'rgba(231, 76, 60, 0.1)',
+                      borderRadius: '24px',
+                      padding: '32px',
+                      border: '1px solid rgba(231, 76, 60, 0.3)',
+                      animation: 'slideIn 0.8s ease-out 0.4s both'
+                    }}>
+                      <h3 style={{ fontSize: '20px', marginBottom: '20px', fontWeight: 600, color: '#E74C3C' }}>
+                        ⚠️ Áreas de Mejora Prioritarias
+                      </h3>
+                      {weakestDimensions.map((dim, i) => (
+                        <div key={dim.id} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '16px',
+                          background: 'rgba(0,0,0,0.2)',
+                          borderRadius: '12px',
+                          marginBottom: '12px'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '24px' }}>{dim.icon}</span>
+                            <span>{dim.name}</span>
+                          </div>
+                          <div style={{
+                            padding: '6px 14px',
+                            background: dim.color,
+                            borderRadius: '20px',
+                            fontWeight: 600
+                          }}>
+                            {dim.score}/25
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Strengths */}
+                    <div style={{
+                      background: 'rgba(39, 174, 96, 0.1)',
+                      borderRadius: '24px',
+                      padding: '32px',
+                      border: '1px solid rgba(39, 174, 96, 0.3)',
+                      animation: 'slideIn 0.8s ease-out 0.5s both'
+                    }}>
+                      <h3 style={{ fontSize: '20px', marginBottom: '20px', fontWeight: 600, color: '#27AE60' }}>
+                        ✓ Fortalezas Identificadas
+                      </h3>
+                      {strongestDimensions.map((dim, i) => (
+                        <div key={dim.id} style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '16px',
+                          background: 'rgba(0,0,0,0.2)',
+                          borderRadius: '12px',
+                          marginBottom: '12px'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '24px' }}>{dim.icon}</span>
+                            <span>{dim.name}</span>
+                          </div>
+                          <div style={{
+                            padding: '6px 14px',
+                            background: dim.color,
+                            borderRadius: '20px',
+                            fontWeight: 600
+                          }}>
+                            {dim.score}/25
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Roadmap */}
+                  <div style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: '24px',
+                    padding: '40px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    marginBottom: '60px',
+                    animation: 'slideIn 0.8s ease-out 0.6s both'
+                  }}>
+                    <h3 style={{ fontSize: '24px', marginBottom: '12px', fontWeight: 700 }}>
+                      🗺️ Roadmap de Transformación Recomendado
+                    </h3>
+                    <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '32px' }}>
+                      Basado en su nivel actual, estas son las fases del Modelo Integral de Evolución Digital en las que debe enfocarse:
+                    </p>
+
+                    <div style={{ position: 'relative' }}>
+                      {/* Timeline line */}
+                      <div style={{
+                        position: 'absolute',
+                        left: '24px',
+                        top: '40px',
+                        bottom: '40px',
+                        width: '4px',
+                        background: 'linear-gradient(to bottom, #2E86AB, #28B463)',
+                        borderRadius: '2px'
+                      }} />
+
+                      {phases.map((phase, i) => {
+                        const isActive = currentPhase.some(p => p.num === phase.num);
+                        const isPast = phase.num < currentPhase[0]?.num;
+                        
+                        return (
+                          <div key={phase.num} style={{
+                            display: 'flex',
+                            gap: '24px',
+                            marginBottom: '24px',
+                            opacity: isActive ? 1 : isPast ? 0.4 : 0.6,
+                            transform: isActive ? 'scale(1.02)' : 'scale(1)',
+                            transition: 'all 0.3s ease'
+                          }}>
+                            <div style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '50%',
+                              background: isActive ? 'linear-gradient(135deg, #2E86AB, #28B463)' : 'rgba(255,255,255,0.1)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              fontSize: '18px',
+                              flexShrink: 0,
+                              border: isActive ? 'none' : '2px solid rgba(255,255,255,0.2)',
+                              boxShadow: isActive ? '0 0 20px rgba(46,134,171,0.5)' : 'none'
+                            }}>
+                              {isPast ? '✓' : phase.num}
+                            </div>
+                            <div style={{
+                              flex: 1,
+                              padding: '16px 24px',
+                              background: isActive ? 'rgba(46,134,171,0.15)' : 'rgba(255,255,255,0.03)',
+                              borderRadius: '16px',
+                              border: isActive ? '2px solid #2E86AB' : '1px solid rgba(255,255,255,0.08)'
+                            }}>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                marginBottom: '8px'
+                              }}>
+                                <span style={{ fontWeight: 700, fontSize: '16px' }}>Fase {phase.num}: {phase.name}</span>
+                                {isActive && (
+                                  <span style={{
+                                    padding: '4px 12px',
+                                    background: '#28B463',
+                                    borderRadius: '20px',
+                                    fontSize: '12px',
+                                    fontWeight: 600
+                                  }}>
+                                    FOCO ACTUAL
+                                  </span>
+                                )}
+                              </div>
+                              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', margin: 0 }}>
+                                {phase.focus}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* All Scores Detail */}
+                  <div style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: '24px',
+                    padding: '40px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    marginBottom: '60px',
+                    animation: 'slideIn 0.8s ease-out 0.7s both'
+                  }}>
+                    <h3 style={{ fontSize: '24px', marginBottom: '32px', fontWeight: 700 }}>
+                      📊 Detalle de Evaluación por Dimensión
+                    </h3>
+                    
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                      {dimensions.map(dim => {
+                        const score = calculateDimensionScore(dim.id);
+                        const percentage = (score / 25) * 100;
+                        
+                        return (
+                          <div key={dim.id} style={{
+                            padding: '20px',
+                            background: 'rgba(0,0,0,0.2)',
+                            borderRadius: '16px'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginBottom: '12px'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '28px' }}>{dim.icon}</span>
+                                <div>
+                                  <div style={{ fontWeight: 600 }}>{dim.name}</div>
+                                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+                                    Fase MIED: {dim.phase}
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '24px', fontWeight: 700, color: dim.color }}>
+                                  {score}
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+                                  de 25 pts
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{
+                              height: '8px',
+                              background: 'rgba(255,255,255,0.1)',
+                              borderRadius: '4px',
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{
+                                height: '100%',
+                                width: `${percentage}%`,
+                                background: dim.color,
+                                borderRadius: '4px',
+                                transition: 'width 1s ease-out'
+                              }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Call to Action */}
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '60px 40px',
+                    background: 'linear-gradient(135deg, rgba(46,134,171,0.2), rgba(40,180,99,0.2))',
+                    borderRadius: '24px',
+                    border: '1px solid rgba(46,134,171,0.3)',
+                    animation: 'slideIn 0.8s ease-out 0.8s both'
+                  }}>
+                    <h3 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>
+                      ¿Listo para acelerar su transformación digital?
+                    </h3>
+                    <p style={{
+                      color: 'rgba(255,255,255,0.7)',
+                      fontSize: '16px',
+                      maxWidth: '600px',
+                      margin: '0 auto 32px'
+                    }}>
+                      Transformación ExO puede acompañarle en cada fase del camino hacia la fusión digital con consultoría especializada y metodología probada.
+                    </p>
+                    
+                    <div style={{ 
+                      display: 'flex', 
+                      gap: '16px', 
+                      justifyContent: 'center',
+                      flexWrap: 'wrap'
+                    }}>
+                      <button
+                        onClick={() => window.print()}
+                        style={{
+                          padding: '16px 32px',
+                          fontSize: '16px',
+                          fontWeight: 600,
+                          background: 'rgba(255,255,255,0.1)',
+                          color: '#fff',
+                          border: '2px solid rgba(255,255,255,0.3)',
+                          borderRadius: '12px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🖨️ Imprimir Resultados
+                      </button>
+                      <button
+                        style={{
+                          padding: '16px 32px',
+                          fontSize: '16px',
+                          fontWeight: 700,
+                          background: 'linear-gradient(135deg, #2E86AB, #28B463)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '12px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        📧 Solicitar Consultoría
+                      </button>
+                    </div>
+
+                    <div style={{
+                      marginTop: '48px',
+                      paddingTop: '32px',
+                      borderTop: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>
+                        Juan Carlos Alzate García · Fundador de Transformación ExO
+                      </p>
+                      <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>
+                        Certified ExO Coach · ExO Mindset Award Latin America
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{
+                    textAlign: 'center',
+                    marginTop: '48px',
+                    padding: '24px',
+                    color: 'rgba(255,255,255,0.4)',
+                    fontSize: '12px'
+                  }}>
+                    <p>© 2025 Transformación ExO. Modelo basado en frameworks de Deloitte, MIT Sloan, KPMG, BCG y Gartner.</p>
+                    <p style={{ marginTop: '8px' }}>
+                      Evaluación realizada el {new Date().toLocaleDateString('es-ES', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })} por {assessorName || 'Anónimo'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+        }
+
+        // Renderizar la aplicación
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DigitalMaturityAssessment />);
+    </script>
+</body>
+</html>}
