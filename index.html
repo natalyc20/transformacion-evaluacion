@@ -5,44 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evaluación de Madurez Digital - Transformación ExO</title>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         body { margin: 0; padding: 0; font-family: 'Outfit', sans-serif; background-color: #0a1628; color: white; }
         * { box-sizing: border-box; }
-        
-        /* Indicador de carga por si la conexión es lenta */
         #loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: #2E86AB;
-            font-size: 20px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            height: 100vh; color: #2E86AB; font-size: 18px; text-align: center; padding: 20px;
         }
+        #error-log { color: #ff6b6b; margin-top: 20px; font-family: monospace; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; max-width: 800px; display: none;}
     </style>
 
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/recharts@2.12.0/umd/Recharts.min.js"></script>
-    
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.12.0/Recharts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
 </head>
 <body>
 
     <div id="root">
-        <div id="loading">Cargando aplicación... (Si esto no desaparece, revisa tu conexión a internet)</div>
+        <div id="loading">
+            <p>Cargando aplicación...</p>
+            <p style="font-size: 14px; opacity: 0.7;">Si esto tarda más de 5 segundos, verifica tu conexión a internet.</p>
+            <div id="error-log"></div>
+        </div>
     </div>
 
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorDiv = document.getElementById('error-log');
+            if (errorDiv) {
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = `<strong>Error detectado:</strong><br>${message}<br><small>${source}:${lineno}</small>`;
+                console.error(error);
+            }
+        };
+        // Ocultar el mensaje de carga una vez que el script de React inicie
+        document.addEventListener('DOMContentLoaded', () => {
+            const loading = document.getElementById('loading');
+            if (loading) {
+                 // Esperamos un momento para dar tiempo a React a renderizar, luego lo ocultamos
+                 setTimeout(() => {
+                    if (document.getElementById('welcome-container')) {
+                        loading.style.display = 'none';
+                    }
+                }, 500);
+            }
+        });
+    </script>
+
+
     <script type="text/babel">
-        // 1. Acceder a las variables globales
+    try {
+        // 1. Acceder a las variables globales (Ahora Recharts funcionará)
         const { useState, useEffect } = React;
         const { 
             Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, 
             ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Tooltip 
-        } = Recharts;
+        } = Recharts; // << ESTO YA NO FALLARÁ
 
         // 2. Datos del Modelo
         const dimensions = [
@@ -245,7 +266,7 @@
           // PANTALLA DE BIENVENIDA
           if (stage === 'welcome') {
             return (
-              <div style={{
+              <div id="welcome-container" style={{
                 minHeight: '100vh',
                 background: 'linear-gradient(135deg, #0a1628 0%, #1a365d 50%, #0d2137 100%)',
                 fontFamily: "'Outfit', sans-serif",
@@ -1270,6 +1291,16 @@
         // 4. Renderizado Final
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<DigitalMaturityAssessment />);
+    } catch (e) {
+        // Capturamos cualquier error de renderizado que no haya sido atrapado por window.onerror
+        const errorDiv = document.getElementById('error-log');
+        if (errorDiv) {
+             errorDiv.style.display = 'block';
+             errorDiv.innerHTML = `<strong>Error Fatal en React:</strong><br>${e.message}<br><small>Revisa el error en la consola para más detalles.</small>`;
+             document.getElementById('loading').style.color = '#ff6b6b';
+        }
+        console.error("Error en la ejecución de React:", e);
+    }
     </script>
 </body>
 </html>
