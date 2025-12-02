@@ -10,29 +10,41 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
-        body { margin: 0; padding: 0; font-family: 'Outfit', sans-serif; background-color: #0a1628; }
+        body { margin: 0; padding: 0; font-family: 'Outfit', sans-serif; background-color: #0a1628; color: white; }
         * { box-sizing: border-box; }
+        
+        /* Indicador de carga por si la conexión es lenta */
+        #loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #2E86AB;
+            font-size: 20px;
+        }
     </style>
 
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/recharts@2.12.0/umd/Recharts.min.js"></script>
     
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
 
-    <div id="root"></div>
+    <div id="root">
+        <div id="loading">Cargando aplicación... (Si esto no desaparece, revisa tu conexión a internet)</div>
+    </div>
 
     <script type="text/babel">
-        // Acceder a las librerías globales
+        // 1. Acceder a las variables globales
         const { useState, useEffect } = React;
         const { 
             Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, 
             ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Cell, Tooltip 
         } = Recharts;
 
-        // --- DATOS DEL MODELO ---
+        // 2. Datos del Modelo
         const dimensions = [
           {
             id: 'estrategia',
@@ -152,7 +164,7 @@
           { num: 7, name: 'Fusión Digital', focus: 'ADN digital, organización exponencial, mejora continua' }
         ];
 
-        // --- COMPONENTE PRINCIPAL ---
+        // 3. Componente Principal (SIN export default)
         function DigitalMaturityAssessment() {
           const [stage, setStage] = useState('welcome');
           const [currentDimension, setCurrentDimension] = useState(0);
@@ -230,7 +242,7 @@
           const totalScore = calculateTotalScore();
           const maturityLevel = getMaturityLevel(totalScore);
 
-          // Welcome Screen
+          // PANTALLA DE BIENVENIDA
           if (stage === 'welcome') {
             return (
               <div style={{
@@ -242,7 +254,6 @@
                 overflow: 'hidden'
               }}>
                 
-                {/* Animated background elements */}
                 <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
                   {[...Array(20)].map((_, i) => (
                     <div key={i} style={{
@@ -461,7 +472,7 @@
             );
           }
 
-          // Assessment Screen
+          // PANTALLA DE EVALUACIÓN
           if (stage === 'assessment') {
             const dim = dimensions[currentDimension];
             
@@ -733,7 +744,7 @@
             );
           }
 
-          // Results Screen
+          // PANTALLA DE RESULTADOS
           if (stage === 'results') {
             const sortedDimensions = [...dimensions]
               .map(d => ({ ...d, score: calculateDimensionScore(d.id) }))
@@ -1256,9 +1267,9 @@
           }
         }
 
-        // Renderizar la aplicación
+        // 4. Renderizado Final
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<DigitalMaturityAssessment />);
     </script>
 </body>
-</html>}
+</html>
